@@ -1,12 +1,14 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import records from '../data/records.json';
-import { asMoney, sumMatchedColumns, MONTH_NAMES } from '../lib/format.ts';
+import { asMoney, sumMatchedColumns, MONTH_NAMES } from '../lib/format';
+import { getDB, getGroupedRecords } from '../lib/db';
 
+const db = getDB(Astro);
+const records = await getGroupedRecords(db);
 const modules = Object.entries(records).filter(([k]) => k !== 'meta');
 
 function eachSheet(moduleName: string, cb: (sheet: any, year: string, file: string, sheetName: string) => void) {
-  const mod = (records as any)[moduleName];
+  const mod = records[moduleName];
   if (!mod) return;
   for (const [year, files] of Object.entries(mod)) {
     for (const [file, sheets] of Object.entries(files as any)) {

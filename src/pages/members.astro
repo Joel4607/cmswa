@@ -1,6 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import records from '../data/records.json';
+import { getDB, getGroupedRecords } from '../lib/db';
+
+const db = getDB(Astro);
+const records = await getGroupedRecords(db);
 
 const roleWords = new Set(['PASTORS','MINISTERS','ASS','ARREARS','NAMES OF LEADERS','TOTAL','NAME','DATE','MONTH','WEEK','DETAILS','UPSA','LEGON','BANI','COMMONWEALTH','LIMANN','OKPONGLO','JEAN NELSON','EVANDY','DAYSPRING','BRANCH']);
 
@@ -17,7 +20,7 @@ const skipValue = (v: unknown) => {
 
 const members = new Set<string>();
 function collect(moduleName: string, sheetFilter?: (n:string)=>boolean, colIndex = 0) {
-  const mod = (records as any)[moduleName];
+  const mod = records[moduleName];
   if (!mod) return;
   for (const files of Object.values(mod)) {
     for (const sheets of Object.values(files as any)) {

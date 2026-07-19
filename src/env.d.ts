@@ -3,6 +3,7 @@
 
 type ENV = {
   DB?: D1Database;
+  ADMIN_PASSWORD?: string;
 };
 
 type Runtime = import("@astrojs/cloudflare").AdvancedRuntime<ENV>;

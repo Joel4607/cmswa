@@ -1,0 +1,130 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { isAdmin, isAdminPasswordSet } from '../../../lib/auth';
+import { getDB, getSheet } from '../../../lib/db';
+
+const env = Astro.locals.runtime.env;
+if (!isAdminPasswordSet(env)) return Astro.redirect('/admin/setup');
+if (!(await isAdmin(Astro, env))) return Astro.redirect('/login');
+
+const moduleParam = Astro.params.module as string;
+const id = Number(Astro.params.id);
+if (isNaN(id)) return Astro.redirect('/admin');
+
+const db = getDB(Astro);
+const sheet = await getSheet(db, id);
+if (!sheet || !db) return Astro.redirect('/admin');
+
+const title = `${sheet.module.replace(/([A-Z])/g, ' $1').trim()} - ${sheet.sheet}`;
+---
+<Layout title={`Edit ${title}`}>
+  <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem">
+    <h1 style="margin:0">Edit {title}</h1>
+    <a href={`/admin/${moduleParam}`} style="color:var(--accent)">Back</a>
+  </div>
+
+  <form id="edit-form" data-id={id}>
+    <table id="edit-table" style="margin-bottom:0.75rem">
+      <thead>
+        <tr>
+          {sheet.data.headers.map((h: any, i: number) => (
+            <th><input class="header-input" data-idx={i} value={h} style="font-weight:600;background:transparent;border:none;width:120px" /></th>
+          ))}
+          <th style="width:40px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {sheet.data.rows.map((row: any[], r: number) => (
+          <tr data-row={r}>
+            {row.map((cell: any, c: number) => (
+              <td><input class="cell-input" data-col={c} value={cell} style="border:none;background:transparent;width:120px" /></td>
+            ))}
+            <td><button type="button" class="del-row" style="background:#ef4444;color:#fff;border:none;border-radius:0.25rem;cursor:pointer">×</button></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <div style="display:flex;gap:0.5rem">
+      <button type="button" id="add-row" style="background:#e2e8f0;border:none;border-radius:0.35rem;padding:0.4rem 0.8rem;cursor:pointer">Add row</button>
+      <button type="submit" style="background:var(--primary);color:#fff;border:none;border-radius:0.35rem;padding:0.5rem 1rem;cursor:pointer">Save</button>
+      <button type="button" id="delete-sheet" style="background:#ef4444;color:#fff;border:none;border-radius:0.35rem;padding:0.5rem 1rem;cursor:pointer">Delete sheet</button>
+      <span id="status" style="align-self:center"></span>
+    </div>
+  </form>
+
+  <script>
+    const form = document.getElementById('edit-form') as HTMLFormElement;
+    const table = document.getElementById('edit-table') as HTMLTableElement;
+    const headerCount = () => table.querySelectorAll('thead input.header-input').length;
+
+    function makeCellInput(idx: number, value = '') {
+      const td = document.createElement('td');
+      const input = document.createElement('input');
+      input.className = 'cell-input';
+      input.dataset.col = String(idx);
+      input.value = value;
+      input.style.cssText = 'border:none;background:transparent;width:120px';
+      td.appendChild(input);
+      return td;
+    }
+
+    function makeDeleteBtn() {
+      const td = document.createElement('td');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'del-row';
+      btn.textContent = '×';
+      btn.style.cssText = 'background:#ef4444;color:#fff;border:none;border-radius:0.25rem;cursor:pointer';
+      btn.onclick = () => btn.closest('tr')?.remove();
+      td.appendChild(btn);
+      return td;
+    }
+
+    document.getElementById('add-row')?.addEventListener('click', () => {
+      const tr = document.createElement('tr');
+      for (let i = 0; i < headerCount(); i++) tr.appendChild(makeCellInput(i));
+      tr.appendChild(makeDeleteBtn());
+      table.querySelector('tbody')?.appendChild(tr);
+    });
+
+    table.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains('del-row')) {
+        target.closest('tr')?.remove();
+      }
+    });
+
+    document.getElementById('delete-sheet')?.addEventListener('click', async () => {
+      if (!confirm('Delete this entire sheet? This cannot be undone.')) return;
+      const id = Number(form.dataset.id);
+      const res = await fetch(`/api/records/${id}`, { method: 'DELETE' });
+      const slug = window.location.pathname.split('/')[2];
+      window.location.href = res.ok ? `/admin/${slug}` : '/admin';
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const headers: string[] = [];
+      table.querySelectorAll('thead input.header-input').forEach((el) => headers.push((el as HTMLInputElement).value));
+      const rows: any[][] = [];
+      table.querySelectorAll('tbody tr').forEach((tr) => {
+        const row: any[] = [];
+        tr.querySelectorAll('input.cell-input').forEach((el) => row.push((el as HTMLInputElement).value));
+        rows.push(row);
+      });
+      const id = Number(form.dataset.id);
+      const status = document.getElementById('status')!;
+      status.textContent = 'Saving...';
+      try {
+        const res = await fetch(`/api/records/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ headers, rows })
+        });
+        status.textContent = res.ok ? 'Saved' : 'Failed';
+      } catch (err) {
+        status.textContent = 'Error';
+      }
+    });
+  </script>
+</Layout>
