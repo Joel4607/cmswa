@@ -35,5 +35,23 @@ npm run preview  # wrangler pages dev ./dist
 
 ## Deploy
 
-1. Bind a Cloudflare D1 database in `wrangler.toml` whenever you move from static JSON to SQL.
-2. Run `npm run deploy` to push `dist/` to Cloudflare Pages.
+### Option A: GitHub Actions (recommended)
+
+1. In the Cloudflare dashboard create a **Pages** project named `cmswa` and connect it.
+2. Create a [Cloudflare API token](https://dash.cloudflare.com/profile/api-tokens) with permission `Cloudflare Pages:Edit`.
+3. Add these GitHub repository secrets:
+   - `CLOUDFLARE_API_TOKEN`
+   - `CLOUDFLARE_ACCOUNT_ID`
+   - (Optional) `CLOUDFLARE_PAGES_PROJECT` — defaults to `cmswa`.
+4. Push to `main`; the workflow in `.github/workflows/deploy.yml` builds and deploys automatically.
+
+### Option B: Wrangler from this machine
+
+```bash
+npm run build
+npx wrangler pages deploy ./dist --project-name=cmswa
+```
+
+### D1 database
+
+Uncomment the `[[d1_databases]]` block in `wrangler.toml` whenever you move from static JSON to a real SQL-backed API.
