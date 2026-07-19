@@ -1,0 +1,11 @@
+# Cloudflare Pages configuration
+# Set your project details in the Cloudflare dashboard or via --project-name during deploy
+name = "cmswa"
+compatibility_date = "2026-07-19"
+pages_build_output_dir = "dist"
+
+# Uncomment and update when you add a D1 database
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "cmswa-db"
+# database_id = "your-database-id"
