@@ -3,9 +3,7 @@ name = "cmswa"
 compatibility_date = "2026-07-19"
 pages_build_output_dir = "dist"
 
-# Uncomment and set database_id after creating the D1 database:
-# npx wrangler d1 create cmswa-db
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "cmswa-db"
-# database_id = "<your-database-id>"
+[[d1_databases]]
+binding = "DB"
+database_name = "cmswa-db"
+database_id = "4c7cf0a1-748e-432c-bc27-c8fc2e5258b7"
