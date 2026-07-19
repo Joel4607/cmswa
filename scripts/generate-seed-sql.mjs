@@ -1,6 +1,7 @@
 import fs from 'fs';
 import records from '../src/data/records.json' with { type: 'json' };
 
+fs.mkdirSync('seeds', { recursive: true });
 let sql = 'BEGIN TRANSACTION;\n';
 for (const module of Object.keys(records)) {
   if (module === 'meta') continue;
@@ -20,5 +21,5 @@ for (const module of Object.keys(records)) {
   }
 }
 sql += 'COMMIT;\n';
-fs.writeFileSync('migrations/seed.sql', sql);
-console.log('migrations/seed.sql written', (sql.length / 1024 / 1024).toFixed(2), 'MB');
+fs.writeFileSync('seeds/seed.sql', sql);
+console.log('seeds/seed.sql written', (sql.length / 1024 / 1024).toFixed(2), 'MB');

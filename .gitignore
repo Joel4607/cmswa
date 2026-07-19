@@ -5,3 +5,5 @@ dist/
 .env
 .dev.vars
 *.log
+tmp/
+seeds/seed.sql

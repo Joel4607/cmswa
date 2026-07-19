@@ -12,7 +12,7 @@
     "db:create": "wrangler d1 create cmswa-db",
     "db:migrate": "wrangler d1 migrations apply cmswa-db",
     "db:migrate:remote": "wrangler d1 migrations apply cmswa-db --remote",
-    "db:seed": "wrangler d1 execute cmswa-db --remote --file=./migrations/seed.sql"
+    "db:seed": "node scripts/seed-d1.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^11.0.0",

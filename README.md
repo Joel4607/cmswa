@@ -54,7 +54,7 @@ Apply the schema and seed records:
 
 ```bash
 npx wrangler d1 migrations apply cmswa-db --remote
-npm run db:seed   # applies migrations/seed.sql
+npm run db:seed   # seeds D1 from src/data/records.json in batches
 ```
 
 ### 2. Set admin password
