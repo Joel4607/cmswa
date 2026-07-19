@@ -1,0 +1,56 @@
+---
+import Layout from '../layouts/Layout.astro';
+import records from '../data/records.json';
+
+const roleWords = new Set(['PASTORS','MINISTERS','ASS','ARREARS','NAMES OF LEADERS','TOTAL','NAME','DATE','MONTH','WEEK','DETAILS','UPSA','LEGON','BANI','COMMONWEALTH','LIMANN','OKPONGLO','JEAN NELSON','EVANDY','DAYSPRING','BRANCH']);
+
+const skipValue = (v: unknown) => {
+  if (v == null || v === '') return true;
+  const s = String(v).trim();
+  if (s.length < 4) return true;
+  if (s.toUpperCase() === s && !s.includes(' ')) return true;
+  if (roleWords.has(s.toUpperCase())) return true;
+  if (s.toUpperCase().includes('EKKLESIA')) return true;
+  if (/^\d/.test(s) && !/[a-zA-Z]/.test(s)) return true;
+  return false;
+};
+
+const members = new Set<string>();
+function collect(moduleName: string, sheetFilter?: (n:string)=>boolean, colIndex = 0) {
+  const mod = (records as any)[moduleName];
+  if (!mod) return;
+  for (const files of Object.values(mod)) {
+    for (const sheets of Object.values(files as any)) {
+      for (const [sheetName, sheet] of Object.entries(sheets as any)) {
+        if (sheetFilter && !sheetFilter(sheetName)) continue;
+        let idx = colIndex;
+        if (sheet.headers) {
+          const nameIdx = sheet.headers.findIndex((h: any) => String(h).toUpperCase() === 'NAME' || String(h).toUpperCase() === 'NAMES');
+          if (nameIdx >= 0) idx = nameIdx;
+        }
+        for (const row of sheet.rows || []) {
+          const v = row[idx];
+          if (!skipValue(v)) members.add(String(v).trim());
+        }
+      }
+    }
+  }
+}
+
+collect('tithers');
+collect('leadersTithe');
+collect('fuel', n => !n.toLowerCase().includes('report'));
+collect('dataAdmin', n => n.toLowerCase().includes('new convert'));
+collect('buscell', n => n.toLowerCase().includes('pastor'));
+
+const list = Array.from(members).sort((a, b) => a.localeCompare(b));
+---
+<Layout title="Members">
+  <h1>Members</h1>
+  <p class="muted">{list.length.toLocaleString()} unique names found across tithers, leaders, fuel records, new converts and bus cell pastors.</p>
+  <div class="grid">
+    {list.map(name => (
+      <div class="card">{name}</div>
+    ))}
+  </div>
+</Layout>
