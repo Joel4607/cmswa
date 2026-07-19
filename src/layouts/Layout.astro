@@ -1,0 +1,56 @@
+---
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <style>
+    :root { --bg:#f4f6fb; --card:#fff; --primary:#1e293b; --accent:#3b82f6; --border:#e2e8f0; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--primary); }
+    nav { background:var(--primary); color:#fff; padding:0.75rem 1rem; display:flex; gap:1rem; flex-wrap:wrap; align-items:center; }
+    nav a { color:#fff; text-decoration:none; font-size:0.9rem; opacity:0.9; }
+    nav a:hover { opacity:1; text-decoration:underline; }
+    nav .brand { font-weight:700; margin-right:auto; }
+    main { padding:1.5rem; max-width:1200px; margin:0 auto; }
+    h1 { margin-top:0; }
+    h2 { margin:1.5rem 0 0.5rem; }
+    .grid { display:grid; gap:1rem; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:0.75rem; padding:1rem; box-shadow:0 1px 2px rgba(0,0,0,0.04); }
+    .card h3 { margin:0 0 0.25rem; font-size:1rem; }
+    .card .value { font-size:1.75rem; font-weight:700; color:var(--accent); }
+    table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--border); border-radius:0.5rem; overflow:hidden; margin:0.5rem 0 1.5rem; }
+    th, td { padding:0.5rem 0.75rem; text-align:left; font-size:0.85rem; border-bottom:1px solid var(--border); white-space:nowrap; }
+    th { background:#f8fafc; font-weight:600; }
+    tr:hover td { background:#f8fafc; }
+    .muted { color:#64748b; }
+    .section { margin-bottom:2rem; }
+    .tabs { display:flex; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap; }
+    .tabs button, .tabs a { background:#e2e8f0; border:none; border-radius:0.35rem; padding:0.4rem 0.7rem; font-size:0.8rem; cursor:pointer; text-decoration:none; color:var(--primary); }
+    .tabs button.active, .tabs a.active { background:var(--primary); color:#fff; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a class="brand" href="/">CMS.wa</a>
+    <a href="/tithers">Tithers</a>
+    <a href="/leaders-tithe">Leaders Tithe</a>
+    <a href="/income-expenditure">Income & Expenses</a>
+    <a href="/momo">MoMo</a>
+    <a href="/fuel">Fuel</a>
+    <a href="/building">Building</a>
+    <a href="/buscell">Bus Cell</a>
+    <a href="/data-admin">Data & Admin</a>
+    <a href="/members">Members</a>
+  </nav>
+  <main>
+    <slot />
+  </main>
+</body>
+</html>

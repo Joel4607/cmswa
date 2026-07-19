@@ -1,0 +1,39 @@
+---
+import Layout from '../layouts/Layout.astro';
+import DataTable from './DataTable.astro';
+import records from '../data/records.json';
+import { asMoney, sumMatchedColumns, MONTH_NAMES } from '../lib/format.ts';
+
+interface Props {
+  module: string;
+  title: string;
+  totalKeys?: string[];
+}
+const { module, title, totalKeys = ['TOTAL'] } = Astro.props;
+const mod = (records as any)[module] ?? {};
+const years = Object.keys(mod).sort();
+---
+<Layout title={title}>
+  <h1>{title}</h1>
+  {years.length === 0 && <p class="muted">No records found.</p>}
+  {years.map(year => (
+    <div class="section">
+      <h2>{year}</h2>
+      {Object.entries(mod[year]).map(([file, sheets]: [string, any]) => (
+        <div>
+          {Object.entries(sheets).map(([sheetName, sheet]: [string, any]) => {
+            const total = sumMatchedColumns(sheet.rows, sheet.headers, totalKeys);
+            return (
+              <div class="section">
+                <h3 class="muted">{sheetName}
+                  {total > 0 && <span style="float:right;color:var(--primary)">Total: GH₵ {asMoney(total)}</span>}
+                </h3>
+                <DataTable headers={sheet.headers} rows={sheet.rows} />
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  ))}
+</Layout>

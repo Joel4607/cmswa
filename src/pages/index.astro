@@ -1,0 +1,88 @@
+---
+import Layout from '../layouts/Layout.astro';
+import records from '../data/records.json';
+import { asMoney, sumMatchedColumns, MONTH_NAMES } from '../lib/format.ts';
+
+const modules = Object.entries(records).filter(([k]) => k !== 'meta');
+
+function eachSheet(moduleName: string, cb: (sheet: any, year: string, file: string, sheetName: string) => void) {
+  const mod = (records as any)[moduleName];
+  if (!mod) return;
+  for (const [year, files] of Object.entries(mod)) {
+    for (const [file, sheets] of Object.entries(files as any)) {
+      for (const [sheetName, sheet] of Object.entries(sheets as any)) {
+        cb(sheet, year, file, sheetName);
+      }
+    }
+  }
+}
+
+function moduleTotal(moduleName: string, keys: string[]) {
+  let total = 0;
+  eachSheet(moduleName, (sheet) => {
+    total += sumMatchedColumns(sheet.rows, sheet.headers, keys);
+  });
+  return total;
+}
+
+const rowCounts: Record<string, number> = {};
+for (const [mod] of modules) {
+  let count = 0;
+  eachSheet(mod, s => count += (s.rows?.length || 0));
+  rowCounts[mod] = count;
+}
+
+const stats = {
+  totalTithes: moduleTotal('tithers', ['TOTAL']),
+  totalLeadersTithe: moduleTotal('leadersTithe', MONTH_NAMES),
+  totalIncome: moduleTotal('incomeExpenditure', ['TOTAL']),
+  totalExpense: moduleTotal('incomeExpenditure', ['EXPENSE']),
+  totalMomoDebit: moduleTotal('momo', ['DEBIT']),
+  totalMomoCredit: moduleTotal('momo', ['CREDIT']),
+  totalBuilding: moduleTotal('building', ['AMOUNT', 'REIMBURSEMENT']),
+  totalFuel: moduleTotal('fuel', MONTH_NAMES)
+};
+
+const cards = [
+  { label: 'Total Tithes', value: `GH₵ ${asMoney(stats.totalTithes) ?? 0}`, href: '/tithers' },
+  { label: 'Leaders Tithe', value: `GH₵ ${asMoney(stats.totalLeadersTithe) ?? 0}`, href: '/leaders-tithe' },
+  { label: 'Total Income Offerings', value: `GH₵ ${asMoney(stats.totalIncome) ?? 0}`, href: '/income-expenditure' },
+  { label: 'Total Expenses', value: `GH₵ ${asMoney(stats.totalExpense) ?? 0}`, href: '/income-expenditure' },
+  { label: 'MoMo Debits', value: `GH₵ ${asMoney(stats.totalMomoDebit) ?? 0}`, href: '/momo' },
+  { label: 'MoMo Credits', value: `GH₵ ${asMoney(stats.totalMomoCredit) ?? 0}`, href: '/momo' },
+  { label: 'Building Expenses', value: `GH₵ ${asMoney(stats.totalBuilding) ?? 0}`, href: '/building' },
+  { label: 'Fuel Records', value: `GH₵ ${asMoney(stats.totalFuel) ?? 0}`, href: '/fuel' },
+];
+
+const moduleCards = modules.map(([key]) => ({
+  key,
+  label: key.replace(/([A-Z])/g, ' $1').trim(),
+  count: rowCounts[key] || 0,
+  href: `/${key.replace(/[A-Z]/g, m => '-' + m.toLowerCase()).replace(/^-/, '')}`
+}));
+---
+<Layout title="CMS.wa Dashboard">
+  <h1>Church Records Dashboard</h1>
+  <p class="muted">Consolidated 2025–2026 records from Excel workbooks</p>
+
+  <h2>Key Figures</h2>
+  <div class="grid">
+    {cards.map(c => (
+      <a class="card" href={c.href} style="text-decoration:none;color:inherit;display:block">
+        <h3>{c.label}</h3>
+        <div class="value">{c.value}</div>
+      </a>
+    ))}
+  </div>
+
+  <h2>Modules</h2>
+  <div class="grid">
+    {moduleCards.map(m => (
+      <a class="card" href={m.href} style="text-decoration:none;color:inherit;display:block">
+        <h3>{m.label}</h3>
+        <div class="value">{m.count.toLocaleString()}</div>
+        <p class="muted">data rows</p>
+      </a>
+    ))}
+  </div>
+</Layout>

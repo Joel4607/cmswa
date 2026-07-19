@@ -1,0 +1,22 @@
+{
+  "name": "cmswa",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "wrangler pages dev ./dist",
+    "ingest": "node scripts/ingest.mjs",
+    "deploy": "wrangler pages deploy ./dist"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^11.0.0",
+    "astro": "^4.15.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "wrangler": "^3.67.0"
+  }
+}
