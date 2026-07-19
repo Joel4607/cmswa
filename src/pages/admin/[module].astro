@@ -1,0 +1,76 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { isAdmin, isAdminPasswordSet } from '../../lib/auth';
+import { getDB, getGroupedRecords, getModuleSheets } from '../../lib/db';
+
+const env = Astro.locals.runtime.env;
+if (!isAdminPasswordSet(env)) return Astro.redirect('/admin/setup');
+if (!(await isAdmin(Astro, env))) return Astro.redirect('/login');
+
+const moduleParam = Astro.params.module as string;
+const db = getDB(Astro);
+const records = await getGroupedRecords(db);
+
+const MODULES = Object.keys(records).filter(k => k !== 'meta');
+const moduleKey = MODULES.find(k => k.replace(/[A-Z]/g, m => '-' + m.toLowerCase()).replace(/^-/, '') === moduleParam);
+if (!moduleKey) return Astro.redirect('/admin');
+
+const sheets = await getModuleSheets(db, moduleKey);
+const title = moduleKey.replace(/([A-Z])/g, ' $1').trim();
+---
+<Layout title={`Admin - ${title}`}>
+  <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem">
+    <h1 style="margin:0">{title}</h1>
+    <a href="/admin" style="color:var(--accent)">Back to admin</a>
+  </div>
+
+  <h2>Add new sheet</h2>
+  <form id="add-form" class="card" style="margin-bottom:1.5rem">
+    <div style="display:grid;gap:0.5rem;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:0.5rem">
+      <input name="module" type="hidden" value={moduleKey} />
+      <label>Year <input name="year" required value="2026" /></label>
+      <label>File <input name="file" required placeholder="filename.xlsx" /></label>
+      <label>Sheet name <input name="sheet" required placeholder="JANUARY" /></label>
+    </div>
+    <label>Headers (JSON array)<textarea name="headers" required rows="2">["NAME","VALUE"]</textarea></label>
+    <label>Rows (JSON array of arrays)<textarea name="rows" required rows="4">[]</textarea></label>
+    <button type="submit" style="background:var(--primary);color:#fff;border:none;border-radius:0.35rem;padding:0.5rem 1rem;cursor:pointer">Add sheet</button>
+    <p id="add-msg"></p>
+  </form>
+
+  <h2>Existing sheets</h2>
+  {sheets.length === 0 && <p class="muted">No sheets yet.</p>}
+  {sheets.map(s => (
+    <div class="card" style="margin-bottom:0.75rem">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <strong>{s.sheet}</strong> <span class="muted">({s.year})</span>
+          <br /><span class="muted" style="font-size:0.8rem">{s.file}</span>
+        </div>
+        <a class="button" href={`/admin/${moduleParam}/${s.id}`} style="background:var(--accent);color:#fff;border:none;border-radius:0.35rem;padding:0.4rem 0.8rem;text-decoration:none">Edit</a>
+      </div>
+    </div>
+  ))}
+
+  <script>
+    document.getElementById('add-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.target as HTMLFormElement;
+      const msg = f.querySelector('#add-msg')!;
+      try {
+        const body = {
+          module: (f.elements.namedItem('module') as HTMLInputElement).value,
+          year: (f.elements.namedItem('year') as HTMLInputElement).value,
+          file: (f.elements.namedItem('file') as HTMLInputElement).value,
+          sheet: (f.elements.namedItem('sheet') as HTMLInputElement).value,
+          headers: JSON.parse((f.elements.namedItem('headers') as HTMLTextAreaElement).value),
+          rows: JSON.parse((f.elements.namedItem('rows') as HTMLTextAreaElement).value),
+        };
+        const res = await fetch('/api/records', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        msg.textContent = res.ok ? 'Saved. Refresh to see it.' : 'Failed to save.';
+      } catch (err) {
+        msg.textContent = 'Error: ' + (err as Error).message;
+      }
+    });
+  </script>
+</Layout>

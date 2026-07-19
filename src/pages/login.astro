@@ -1,0 +1,25 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { isAdmin, isAdminPasswordSet } from '../lib/auth';
+
+const env = Astro.locals.runtime.env;
+if (!isAdminPasswordSet(env)) {
+  return Astro.redirect('/admin?noauth=1');
+}
+if (await isAdmin(Astro, env)) {
+  return Astro.redirect('/admin');
+}
+
+const error = Astro.url.searchParams.get('error');
+---
+<Layout title="Admin Login">
+  <h1>Admin Login</h1>
+  {error && <p style="color:#b91c1c">Invalid password.</p>}
+  <form method="POST" action="/api/admin/login" class="card" style="max-width:400px">
+    <label style="display:block;margin-bottom:0.5rem">
+      Password
+      <input type="password" name="password" required style="width:100%;margin-top:0.25rem;padding:0.5rem;border:1px solid var(--border);border-radius:0.35rem" />
+    </label>
+    <button type="submit" style="background:var(--primary);color:#fff;border:none;border-radius:0.35rem;padding:0.6rem 1rem;cursor:pointer">Log in</button>
+  </form>
+</Layout>

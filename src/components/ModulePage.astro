@@ -1,8 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import DataTable from './DataTable.astro';
-import records from '../data/records.json';
-import { asMoney, sumMatchedColumns, MONTH_NAMES } from '../lib/format.ts';
+import { asMoney, sumMatchedColumns, MONTH_NAMES } from '../lib/format';
+import { getDB, getGroupedRecords } from '../lib/db';
 
 interface Props {
   module: string;
@@ -10,7 +10,9 @@ interface Props {
   totalKeys?: string[];
 }
 const { module, title, totalKeys = ['TOTAL'] } = Astro.props;
-const mod = (records as any)[module] ?? {};
+const db = getDB(Astro);
+const records = await getGroupedRecords(db);
+const mod = records[module] ?? {};
 const years = Object.keys(mod).sort();
 ---
 <Layout title={title}>

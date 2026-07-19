@@ -1,0 +1,72 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { isAdmin, isAdminPasswordSet } from '../../lib/auth';
+import { getDB, getGroupedRecords } from '../../lib/db';
+
+const env = Astro.locals.runtime.env;
+if (!isAdminPasswordSet(env)) {
+  return Astro.redirect('/admin/setup');
+}
+if (!(await isAdmin(Astro, env))) {
+  return Astro.redirect('/login');
+}
+
+const db = getDB(Astro);
+const records = await getGroupedRecords(db);
+const modules = Object.entries(records).filter(([k]) => k !== 'meta');
+
+function slug(key: string) {
+  return key.replace(/[A-Z]/g, m => '-' + m.toLowerCase()).replace(/^-/, '');
+}
+
+function sheetCount(mod: any) {
+  let count = 0;
+  for (const year of Object.values(mod)) {
+    for (const file of Object.values(year as any)) {
+      count += Object.keys(file as any).length;
+    }
+  }
+  return count;
+}
+---
+<Layout title="Admin - CMS.wa">
+  <h1>Admin</h1>
+  <form method="POST" action="/api/admin/logout" style="margin-bottom:1rem">
+    <button type="submit" style="background:#ef4444;color:#fff;border:none;border-radius:0.35rem;padding:0.4rem 0.8rem;cursor:pointer">Log out</button>
+  </form>
+
+  <h2>Modules</h2>
+  <div class="grid">
+    {modules.map(([key, mod]) => {
+      const s = slug(key);
+      return (
+        <a class="card" href={`/admin/${s}`} style="text-decoration:none;color:inherit;display:block">
+          <h3>{key.replace(/([A-Z])/g, ' $1').trim()}</h3>
+          <div class="value">{sheetCount(mod)}</div>
+          <p class="muted">sheets</p>
+        </a>
+      );
+    })}
+  </div>
+
+  <h2>Database</h2>
+  <div class="card">
+    <p class="muted">If the D1 database is empty, seed it from the existing records.json:</p>
+    <button id="seed" style="background:var(--primary);color:#fff;border:none;border-radius:0.35rem;padding:0.6rem 1rem;cursor:pointer">Seed from records.json</button>
+    <p id="seed-msg" style="margin-top:0.5rem"></p>
+  </div>
+
+  <script>
+    document.getElementById('seed')?.addEventListener('click', async () => {
+      const msg = document.getElementById('seed-msg')!;
+      msg.textContent = 'Seeding...';
+      try {
+        const res = await fetch('/api/seed', { method: 'POST' });
+        const data = await res.json().catch(() => ({}));
+        msg.textContent = res.ok ? `Seeded ${data.seeded ?? '?'} sheets.` : 'Seed failed.';
+      } catch (e) {
+        msg.textContent = 'Error: ' + (e as Error).message;
+      }
+    });
+  </script>
+</Layout>

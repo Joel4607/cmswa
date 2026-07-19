@@ -1,0 +1,20 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { isAdminPasswordSet } from '../../lib/auth';
+
+if (isAdminPasswordSet(Astro.locals.runtime.env)) {
+  return Astro.redirect('/admin');
+}
+---
+<Layout title="Admin Setup">
+  <h1>Admin Setup</h1>
+  <div class="card">
+    <p>You need to set an admin password before using the CMS features.</p>
+    <ol>
+      <li>Go to your Cloudflare Pages project → <strong>Settings</strong> → <strong>Environment variables</strong>.</li>
+      <li>Add a secret named <code>ADMIN_PASSWORD</code> with a strong password.</li>
+      <li>Trigger a new deploy so the secret is available to the server.</li>
+      <li>Then visit <a href="/admin">/admin</a> and log in.</li>
+    </ol>
+  </div>
+</Layout>
